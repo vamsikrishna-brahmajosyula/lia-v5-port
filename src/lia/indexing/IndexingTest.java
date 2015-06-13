@@ -23,7 +23,11 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.search.IndexSearcher;
@@ -50,35 +54,32 @@ public class IndexingTest extends TestCase {
 
     for (int i = 0; i < ids.length; i++) {      //3
       Document doc = new Document();
-      doc.add(new Field("id", ids[i],
-                        Field.Store.YES,
-                        Field.Index.NOT_ANALYZED));
-      doc.add(new Field("country", unindexed[i],
-                        Field.Store.YES,
-                        Field.Index.NO));
-      doc.add(new Field("contents", unstored[i],
-                        Field.Store.NO,
-                        Field.Index.ANALYZED));
-      doc.add(new Field("city", text[i],
-                        Field.Store.YES,
-                        Field.Index.ANALYZED));
+      doc.add(new StringField("id", ids[i],
+                        Field.Store.YES));
+      doc.add(new StringField("country", unindexed[i],
+                        Field.Store.YES));
+      doc.add(new TextField("contents", unstored[i],
+                        Field.Store.NO
+                        ));
+      doc.add(new StringField("city", text[i],
+                        Field.Store.YES));
       writer.addDocument(doc);
     }
     writer.close();
   }
 
   private IndexWriter getWriter() throws IOException {            // 2
-    return new IndexWriter(directory, new WhitespaceAnalyzer(),   // 2
-                           IndexWriter.MaxFieldLength.UNLIMITED); // 2
+    return new IndexWriter(directory,new IndexWriterConfig(new WhitespaceAnalyzer())); // 2
   }
 
   protected int getHitCount(String fieldName, String searchString)
     throws IOException {
-    IndexSearcher searcher = new IndexSearcher(directory); //4
+	IndexReader reader = DirectoryReader.open(directory);
+    IndexSearcher searcher = new IndexSearcher(reader); //4
     Term t = new Term(fieldName, searchString);
     Query query = new TermQuery(t);                        //5
     int hitCount = TestUtil.hitCount(searcher, query);     //6
-    searcher.close();
+    
     return hitCount;
   }
 
@@ -89,7 +90,7 @@ public class IndexingTest extends TestCase {
   }
 
   public void testIndexReader() throws IOException {
-    IndexReader reader = IndexReader.open(directory);
+    IndexReader reader = DirectoryReader.open(directory);
     assertEquals(ids.length, reader.maxDoc());             //8
     assertEquals(ids.length, reader.numDocs());            //8
     reader.close();
@@ -121,7 +122,6 @@ public class IndexingTest extends TestCase {
     IndexWriter writer = getWriter();
     assertEquals(2, writer.numDocs());
     writer.deleteDocuments(new Term("id", "1"));
-    writer.optimize();                //3
     writer.commit();
     assertFalse(writer.hasDeletions());
     assertEquals(1, writer.maxDoc());  //C
@@ -146,19 +146,15 @@ public class IndexingTest extends TestCase {
     IndexWriter writer = getWriter();
 
     Document doc = new Document();                   //A            
-    doc.add(new Field("id", "1",
-                      Field.Store.YES,
-                      Field.Index.NOT_ANALYZED));    //A
-    doc.add(new Field("country", "Netherlands",
-                      Field.Store.YES,
-                      Field.Index.NO));              //A  
-    doc.add(new Field("contents",                    
+    doc.add(new StringField("id", "1",
+                      Field.Store.YES));    //A
+    doc.add(new StringField("country", "Netherlands",
+                      Field.Store.YES));              //A  
+    doc.add(new TextField("contents",                    
                       "Den Haag has a lot of museums",
-                      Field.Store.NO,
-                      Field.Index.ANALYZED));       //A
-    doc.add(new Field("city", "Den Haag",
-                      Field.Store.YES,
-                      Field.Index.ANALYZED));       //A
+                      Field.Store.NO));       //A
+    doc.add(new StringField("city", "Den Haag",
+                      Field.Store.YES));       //A
 
     writer.updateDocument(new Term("id", "1"),       //B
                           doc);                      //B
@@ -179,12 +175,11 @@ public class IndexingTest extends TestCase {
 
     assertEquals(1, getHitCount("contents", "bridges"));  //1
 
-    IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), //2
-                                         new IndexWriter.MaxFieldLength(1)); //2
+    IndexWriter writer = new IndexWriter(directory, new IndexWriterConfig(new WhitespaceAnalyzer())); //2
     Document doc = new Document();                        // 3
-    doc.add(new Field("contents",
+    doc.add(new TextField("contents",
                       "these bridges can't be found",    // 3
-                      Field.Store.NO, Field.Index.ANALYZED));   // 3
+                      Field.Store.NO));   // 3
     writer.addDocument(doc);   // 3
     writer.close();   // 3
 
