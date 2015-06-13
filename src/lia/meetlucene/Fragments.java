@@ -27,10 +27,11 @@ import java.io.IOException;
 
 public class Fragments {
   public void simpleSearch() throws IOException {
-    Directory dir = FSDirectory.open(new File("/tmp/index"));
-    IndexSearcher searcher = new IndexSearcher(dir);
+    Directory dir = new SimpleFSDirectory(new File("/tmp/index").toPath());
+    IndexReader reader = DirectoryReader.open(dir);
+    IndexSearcher searcher = new IndexSearcher(reader);
     Query q = new TermQuery(new Term("contents", "lucene"));
     TopDocs hits = searcher.search(q, 10);
-    searcher.close();
+    
   }
 }

@@ -1,5 +1,7 @@
 package lia.meetlucene;
 
+import org.apache.lucene.index.DirectoryReader;
+
 /**
  * Copyright Manning Publications Co.
  *
@@ -16,10 +18,14 @@ package lia.meetlucene;
 */
 
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.SimpleFSDirectory;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Version;
 
@@ -61,12 +67,10 @@ public class Indexer {
   private IndexWriter writer;
 
   public Indexer(String indexDir) throws IOException {
-    Directory dir = FSDirectory.open(new File(indexDir));
+    Directory dir = new SimpleFSDirectory(new File(indexDir).toPath());
     writer = new IndexWriter(dir,            //3
-                 new StandardAnalyzer(       //3
-                     Version.LUCENE_30),//3
-                 true,                       //3
-                             IndexWriter.MaxFieldLength.UNLIMITED); //3
+                 new IndexWriterConfig(new StandardAnalyzer(       //3
+                     ))); //3
   }
 
   public void close() throws IOException {
@@ -100,11 +104,11 @@ public class Indexer {
 
   protected Document getDocument(File f) throws Exception {
     Document doc = new Document();
-    doc.add(new Field("contents", new FileReader(f)));      //7
-    doc.add(new Field("filename", f.getName(),              //8
-                Field.Store.YES, Field.Index.NOT_ANALYZED));//8
-    doc.add(new Field("fullpath", f.getCanonicalPath(),     //9
-                Field.Store.YES, Field.Index.NOT_ANALYZED));//9
+    doc.add(new TextField("contents", new FileReader(f)));      //7
+    doc.add(new StringField("filename", f.getName(),              //8
+                Field.Store.YES));//8
+    doc.add(new StringField("fullpath", f.getCanonicalPath(),     //9
+                Field.Store.YES));//9
     return doc;
   }
 
