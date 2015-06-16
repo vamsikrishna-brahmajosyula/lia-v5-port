@@ -21,14 +21,20 @@ import java.io.IOException;
 
 import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.NumericField;
+import org.apache.lucene.document.FieldType;
+import org.apache.lucene.document.IntField;
+import org.apache.lucene.document.LongField;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.DoubleField;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.WhitespaceAnalyzer;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.util.Version;
 
 // From chapter 2
@@ -38,9 +44,9 @@ class Fragments {
 
   public static void indexNumbersMethod() {
     // START
-    new Field("size", "4096", Field.Store.YES, Field.Index.NOT_ANALYZED);
-    new Field("price", "10.99", Field.Store.YES, Field.Index.NOT_ANALYZED);
-    new Field("author", "Arthur C. Clark", Field.Store.YES, Field.Index.NOT_ANALYZED);
+    new StringField("size", "4096", Field.Store.YES);
+    new StringField("price", "10.99", Field.Store.YES);
+    new TextField("author", "Arthur C. Clark", Field.Store.YES);
     // END
   }
 
@@ -79,8 +85,7 @@ class Fragments {
     Analyzer analyzer = new WhitespaceAnalyzer();
     // START
     Directory ramDir = new RAMDirectory();
-    IndexWriter writer = new IndexWriter(ramDir, analyzer,    
-                                IndexWriter.MaxFieldLength.UNLIMITED);
+    IndexWriter writer = new IndexWriter(ramDir,new IndexWriterConfig( analyzer));
     // END
   }
 
@@ -88,7 +93,7 @@ class Fragments {
     Directory otherDir = null;
 
     // START
-    Directory ramDir = new RAMDirectory(otherDir);
+    Directory ramDir = new RAMDirectory();
     // END
   }
 
@@ -98,16 +103,15 @@ class Fragments {
     Analyzer analyzer = null;
 
     // START
-    IndexWriter writer = new IndexWriter(otherDir, analyzer,
-                                         IndexWriter.MaxFieldLength.UNLIMITED);
-    writer.addIndexesNoOptimize(new Directory[] {ramDir});
+    IndexWriter writer = new IndexWriter(otherDir, new IndexWriterConfig(analyzer));
+    writer.addIndexes(new Directory[] {ramDir});
     // END
   }
 
   public void docBoostMethod() throws IOException {
 
     Directory dir = new RAMDirectory();
-    IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Version.LUCENE_30), IndexWriter.MaxFieldLength.UNLIMITED);
+    IndexWriter writer = new IndexWriter(dir, new IndexWriterConfig( new StandardAnalyzer()));
 
     // START
     Document doc = new Document();
@@ -115,23 +119,20 @@ class Fragments {
     String senderName = getSenderName();
     String subject = getSubject();
     String body = getBody();
-    doc.add(new Field("senderEmail", senderEmail,
-                      Field.Store.YES,
-                      Field.Index.NOT_ANALYZED));
-    doc.add(new Field("senderName", senderName,
-                      Field.Store.YES,
-                      Field.Index.ANALYZED));
-    doc.add(new Field("subject", subject,
-                      Field.Store.YES,
-                      Field.Index.ANALYZED));
-    doc.add(new Field("body", body,
-                      Field.Store.NO,
-                      Field.Index.ANALYZED));
+    doc.add(new StringField("senderEmail", senderEmail,
+                      Field.Store.YES));
+    doc.add(new StringField("senderName", senderName,
+                      Field.Store.YES));
+    doc.add(new TextField("subject", subject,
+                      Field.Store.YES));
+    doc.add(new TextField("body", body,
+                      Field.Store.NO));
     String lowerDomain = getSenderDomain().toLowerCase();
     if (isImportant(lowerDomain)) {
-      doc.setBoost(1.5F);     //1
+      //doc.setBoost(1.5F); 
+      //1
     } else if (isUnimportant(lowerDomain)) {
-      doc.setBoost(0.1F);    //2 
+      //doc.setBoost(0.1F);    //2 
     }
     writer.addDocument(doc);
     // END
@@ -149,9 +150,8 @@ class Fragments {
     String subject = getSubject();
 
     // START
-    Field subjectField = new Field("subject", subject,
-                                   Field.Store.YES,
-                                   Field.Index.ANALYZED);
+    Field subjectField = new TextField("subject", subject,
+                                   Field.Store.YES);
     subjectField.setBoost(1.2F);
     // END
   }
@@ -159,28 +159,26 @@ class Fragments {
   public void numberField() {
     Document doc = new Document();
     // START
-    doc.add(new NumericField("price").setDoubleValue(19.99));
+    doc.add(new DoubleField("price", 19.99, Field.Store.YES));
     // END
   }
 
   public void numberTimestamp() {
     Document doc = new Document();
     // START
-    doc.add(new NumericField("timestamp")
-             .setLongValue(new Date().getTime()));
+    doc.add(new LongField("timestamp",new Date().getTime(),Field.Store.YES));
     // END
 
     // START
-    doc.add(new NumericField("day")
-            .setIntValue((int) (new Date().getTime()/24/3600)));
+    doc.add(new IntField("day", (int) (new Date().getTime()/24/3600), Field.Store.YES));
     // END
 
     Date date = new Date();
     // START
     Calendar cal = Calendar.getInstance();
     cal.setTime(date);
-    doc.add(new NumericField("dayOfMonth")
-            .setIntValue(cal.get(Calendar.DAY_OF_MONTH)));
+    doc.add(new IntField("dayOfMonth",cal.get(Calendar.DAY_OF_MONTH), Field.Store.YES ));
+            
     // END
   }
 
@@ -188,33 +186,33 @@ class Fragments {
     Directory dir = null;
     Analyzer analyzer = null;
     // START
-    IndexWriter writer = new IndexWriter(dir, analyzer,
-                                         true, IndexWriter.MaxFieldLength.UNLIMITED);
-    writer.setInfoStream(System.out);
+    IndexWriter writer = new IndexWriter(dir,new IndexWriterConfig( analyzer).setInfoStream(System.out));
+    
     // END
   }
 
   public void dateMethod() {
     Document doc = new Document();
-    doc.add(new Field("indexDate",
+    doc.add(new StringField("indexDate",
                       DateTools.dateToString(new Date(), DateTools.Resolution.DAY),
-                      Field.Store.YES,
-                      Field.Index.NOT_ANALYZED));
+                      Field.Store.YES
+                      ));
   }
 
   public void numericField() throws Exception {
     Document doc = new Document();
-    NumericField price = new NumericField("price");
-    price.setDoubleValue(19.99);
+    DoubleField price = new DoubleField("price",19.99, Field.Store.YES);
+    
     doc.add(price);
 
-    NumericField timestamp = new NumericField("timestamp");
-    timestamp.setLongValue(new Date().getTime());
+    LongField timestamp = new LongField("timestamp",new Date().getTime(),Field.Store.YES);
+    
     doc.add(timestamp);
 
     Date b = new Date();
-    NumericField birthday = new NumericField("birthday");
+   
     String v = DateTools.dateToString(b, DateTools.Resolution.DAY);
+    IntField birthday = new IntField("birthday", Integer.parseInt(v),Field.Store.YES);
     birthday.setIntValue(Integer.parseInt(v));
     doc.add(birthday);
   }
@@ -224,9 +222,8 @@ class Fragments {
     // START
     Document doc = new Document();
     for (String author: authors) {
-      doc.add(new Field("author", author,
-                        Field.Store.YES,
-                        Field.Index.ANALYZED));
+      doc.add(new StringField("author", author,
+                        Field.Store.YES));
     }
     // END
   }
