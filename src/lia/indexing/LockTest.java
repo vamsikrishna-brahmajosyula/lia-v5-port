@@ -16,7 +16,8 @@ package lia.indexing;
 */
 
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.analysis.SimpleAnalyzer;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.LockObtainFailedException;
@@ -25,6 +26,7 @@ import junit.framework.TestCase;
 import java.io.IOException;
 import java.io.File;
 
+import lia.analysis.keyword.SimpleKeywordAnalyzer;
 import lia.common.TestUtil;
 
 // From chapter 2
@@ -37,17 +39,15 @@ public class LockTest extends TestCase {
     indexDir = new File(
       System.getProperty("java.io.tmpdir", "tmp") +
       System.getProperty("file.separator") + "index");
-    dir = FSDirectory.open(indexDir);
+    dir = FSDirectory.open(indexDir.toPath());
   }
 
   public void testWriteLock() throws IOException {
 
-    IndexWriter writer1 = new IndexWriter(dir, new SimpleAnalyzer(),
-                                          IndexWriter.MaxFieldLength.UNLIMITED);
+    IndexWriter writer1 = new IndexWriter(dir,new IndexWriterConfig( new SimpleAnalyzer()));
     IndexWriter writer2 = null;
     try {
-      writer2 = new IndexWriter(dir, new SimpleAnalyzer(),
-                                IndexWriter.MaxFieldLength.UNLIMITED);
+      writer2 = new IndexWriter(dir,new IndexWriterConfig( new SimpleKeywordAnalyzer()));
       fail("We should never reach this point");
     }
     catch (LockObtainFailedException e) {
