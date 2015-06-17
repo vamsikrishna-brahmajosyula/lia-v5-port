@@ -17,12 +17,15 @@ package lia.common;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.NumericField;
+import org.apache.lucene.document.IntField;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.document.DateTools;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.util.Version;
 
 import java.io.File;
@@ -56,48 +59,35 @@ public class CreateTestIndex {
 
     System.out.println(title + "\n" + author + "\n" + subject + "\n" + pubmonth + "\n" + category + "\n---------");
 
-    doc.add(new Field("isbn",                     // 3
+    doc.add(new StringField("isbn",                     // 3
                       isbn,                       // 3
-                      Field.Store.YES,            // 3
-                      Field.Index.NOT_ANALYZED)); // 3
-    doc.add(new Field("category",                 // 3
+                      Field.Store.YES)); // 3
+    doc.add(new StringField("category",                 // 3
                       category,                   // 3
-                      Field.Store.YES,            // 3
-                      Field.Index.NOT_ANALYZED)); // 3
-    doc.add(new Field("title",                    // 3
+                      Field.Store.YES)); // 3
+    doc.add(new TextField("title",                    // 3
                       title,                      // 3
-                      Field.Store.YES,            // 3
-                      Field.Index.ANALYZED,       // 3
-                      Field.TermVector.WITH_POSITIONS_OFFSETS));   // 3
-    doc.add(new Field("title2",                   // 3
+                      Field.Store.YES));   // 3
+    doc.add(new TextField("title2",                   // 3
                       title.toLowerCase(),        // 3
-                      Field.Store.YES,            // 3
-                      Field.Index.NOT_ANALYZED_NO_NORMS,   // 3
-                      Field.TermVector.WITH_POSITIONS_OFFSETS));  // 3
+                      Field.Store.YES));  // 3
 
     // split multiple authors into unique field instances
     String[] authors = author.split(",");            // 3
     for (String a : authors) {                       // 3
-      doc.add(new Field("author",                    // 3
+      doc.add(new StringField("author",                    // 3
                         a,                           // 3
-                        Field.Store.YES,             // 3
-                        Field.Index.NOT_ANALYZED,    // 3
-                        Field.TermVector.WITH_POSITIONS_OFFSETS));   // 3
+                        Field.Store.YES));   // 3
     }
 
-    doc.add(new Field("url",                        // 3
+    doc.add(new StringField("url",                        // 3
                       url,                           // 3
-                      Field.Store.YES,                // 3
-                      Field.Index.NOT_ANALYZED_NO_NORMS));   // 3
-    doc.add(new Field("subject",                     // 3  //4
+                      Field.Store.YES));   // 3
+    doc.add(new TextField("subject",                     // 3  //4
                       subject,                       // 3  //4
-                      Field.Store.YES,               // 3  //4
-                      Field.Index.ANALYZED,          // 3  //4
-                      Field.TermVector.WITH_POSITIONS_OFFSETS)); // 3  //4
+                      Field.Store.YES)); // 3  //4
 
-    doc.add(new NumericField("pubmonth",          // 3
-                             Field.Store.YES,     // 3
-                             true).setIntValue(Integer.parseInt(pubmonth)));   // 3
+    doc.add(new IntField("pubmonth",Integer.parseInt(pubmonth), Field.Store.YES));   // 3
 
     Date d; // 3
     try { // 3
@@ -105,13 +95,11 @@ public class CreateTestIndex {
     } catch (ParseException pe) { // 3
       throw new RuntimeException(pe); // 3
     }                                             // 3
-    doc.add(new NumericField("pubmonthAsDay")      // 3
-                 .setIntValue((int) (d.getTime()/(1000*3600*24))));   // 3
+    doc.add(new IntField("pubmonthAsDay" ,(int) (d.getTime()/(1000*3600*24)) , Field.Store.YES));   // 3
 
     for(String text : new String[] {title, subject, author, category}) {           // 3 // 5
-      doc.add(new Field("contents", text,                             // 3 // 5
-                        Field.Store.NO, Field.Index.ANALYZED,         // 3 // 5
-                        Field.TermVector.WITH_POSITIONS_OFFSETS));    // 3 // 5
+      doc.add(new TextField("contents", text,                             // 3 // 5
+                        Field.Store.NO));    // 3 // 5
     }
 
     return doc;
@@ -138,10 +126,12 @@ public class CreateTestIndex {
     }
   }
 
-  private static class MyStandardAnalyzer extends StandardAnalyzer {  // 6
-    public MyStandardAnalyzer(Version matchVersion) {                 // 6
-      super(matchVersion);                                            // 6
-    }                                                                 // 6
+/*  private static class MyStandardAnalyzer extends StandardAnalyzer {  // 6
+    private StandardAnalyzer standardAnalyzer ;
+    public MyStandardAnalyzer(){
+    	standardAnalyzer = new StandardAnalyzer();
+    
+    }
     public int getPositionIncrementGap(String field) {                // 6
       if (field.equals("contents")) {                                 // 6
         return 100;                                                   // 6
@@ -149,7 +139,7 @@ public class CreateTestIndex {
         return 0;                                                     // 6
       }
     }
-  }
+  }*/
 
   public static void main(String[] args) throws IOException {
     String dataDir = args[0];
@@ -157,11 +147,9 @@ public class CreateTestIndex {
     List<File> results = new ArrayList<File>();
     findFiles(results, new File(dataDir));
     System.out.println(results.size() + " books to index");
-    Directory dir = FSDirectory.open(new File(indexDir));
+    Directory dir = FSDirectory.open(new File(indexDir).toPath());
     IndexWriter w = new IndexWriter(dir,
-                                    new MyStandardAnalyzer(Version.LUCENE_30),
-                                    true,
-                                    IndexWriter.MaxFieldLength.UNLIMITED);
+                                    new IndexWriterConfig(new StandardAnalyzer()));
     for(File file : results) {
       Document doc = getDocument(dataDir, file);
       w.addDocument(doc);
