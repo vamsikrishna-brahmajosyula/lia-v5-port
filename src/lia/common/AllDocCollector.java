@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.search.Collector;
+import org.apache.lucene.search.SimpleCollector;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.Scorer;
 
@@ -30,7 +30,7 @@ import org.apache.lucene.search.Scorer;
  * Gathers all documents from a search.
  */
 
-public class AllDocCollector extends Collector {
+public class AllDocCollector extends SimpleCollector {
   List<ScoreDoc> docs = new ArrayList<ScoreDoc>();
   private Scorer scorer;
   private int docBase;
@@ -60,6 +60,12 @@ public class AllDocCollector extends Collector {
   public List<ScoreDoc> getHits() {
     return docs;
   }
+
+@Override
+public boolean needsScores() {
+	// TODO Auto-generated method stub
+	return true;
+}
 }
 
 /*
