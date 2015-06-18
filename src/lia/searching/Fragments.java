@@ -21,13 +21,14 @@ import java.io.File;
 
 import lia.common.TestUtil;
 
-import org.apache.lucene.analysis.SimpleAnalyzer;
+import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.queryParser.*;
+import org.apache.lucene.queryparser.*;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.*;
 import org.apache.lucene.analysis.*;
 import org.apache.lucene.index.*;
@@ -37,8 +38,8 @@ import org.apache.lucene.util.*;
 public class Fragments {
 
   public void openSearcher() throws Exception {
-    Directory dir = FSDirectory.open(new File("/path/to/index"));
-    IndexReader reader = IndexReader.open(dir);
+    Directory dir = FSDirectory.open(new File("/path/to/index").toPath());
+    IndexReader reader = DirectoryReader.open(dir);
     IndexSearcher searcher = new IndexSearcher(reader);
   }
 
@@ -46,7 +47,7 @@ public class Fragments {
     IndexReader reader = null;
     IndexSearcher searcher;
     // START
-    IndexReader newReader = reader.reopen();
+    IndexReader newReader = reader;
     if (reader != newReader) {
       reader.close();
       reader = newReader;
@@ -75,8 +76,7 @@ public class Fragments {
   public void queryParserOperator() throws Exception {
     Analyzer analyzer = null;
     // START
-    QueryParser parser = new QueryParser(Version.LUCENE_30,
-                                         "contents", analyzer);
+    QueryParser parser = new QueryParser("contents", analyzer);
     parser.setDefaultOperator(QueryParser.AND_OPERATOR);
     // END
   }

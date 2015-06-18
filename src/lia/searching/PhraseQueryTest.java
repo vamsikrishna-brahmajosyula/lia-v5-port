@@ -16,10 +16,13 @@ package lia.searching;
 */
 
 import junit.framework.TestCase;
-import org.apache.lucene.analysis.WhitespaceAnalyzer;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.IndexSearcher;
@@ -36,22 +39,20 @@ public class PhraseQueryTest extends TestCase {
 
   protected void setUp() throws IOException {
     dir = new RAMDirectory();
-    IndexWriter writer = new IndexWriter(dir,
-                                         new WhitespaceAnalyzer(),
-                                         IndexWriter.MaxFieldLength.UNLIMITED);
+    
+    IndexWriter writer = new IndexWriter(dir, new IndexWriterConfig(new WhitespaceAnalyzer()));
     Document doc = new Document();
-    doc.add(new Field("field",                                    // 1
+    doc.add(new TextField("field",                                    // 1
               "the quick brown fox jumped over the lazy dog",     // 1
-              Field.Store.YES,                                    // 1
-              Field.Index.ANALYZED));                             // 1
+              Field.Store.YES));                             // 1
     writer.addDocument(doc);
     writer.close();
 
-    searcher = new IndexSearcher(dir);
+    searcher = new IndexSearcher(DirectoryReader.open(dir));
   }
 
   protected void tearDown() throws IOException {
-    searcher.close();
+    
     dir.close();
   }
 

@@ -16,7 +16,8 @@ package lia.searching;
 */
 
 import java.io.IOException;
-import org.apache.lucene.queryParser.*;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.analysis.standard.*;
 import org.apache.lucene.document.*;
 import org.apache.lucene.search.*;
@@ -34,9 +35,7 @@ public class SearchServletFragment extends HttpServlet {
                        HttpServletResponse response) 
       throws ServletException, IOException {
     
-    QueryParser parser = new NumericDateRangeQueryParser(Version.LUCENE_30,
-                                                  "contents",
-        new StandardAnalyzer(Version.LUCENE_30));
+    QueryParser parser = new NumericDateRangeQueryParser(Version.LATEST, "contents", new StandardAnalyzer());
     
     parser.setLocale(request.getLocale());
     parser.setDateResolution(DateTools.Resolution.DAY);

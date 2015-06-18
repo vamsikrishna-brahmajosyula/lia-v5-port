@@ -15,9 +15,10 @@ package lia.searching;
  * See the License for the specific lan      
 */
 
-import org.apache.lucene.analysis.SimpleAnalyzer;
+import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.Explanation;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.ScoreDoc;
@@ -40,14 +41,13 @@ public class Explainer {
     String indexDir = args[0];
     String queryExpression = args[1];
 
-    Directory directory = FSDirectory.open(new File(indexDir));
-    QueryParser parser = new QueryParser(Version.LUCENE_30,
-                                         "contents", new SimpleAnalyzer());
+    Directory directory = FSDirectory.open(new File(indexDir).toPath());
+    QueryParser parser = new QueryParser("contents", new SimpleAnalyzer());
     Query query = parser.parse(queryExpression);
 
     System.out.println("Query: " + queryExpression);
 
-    IndexSearcher searcher = new IndexSearcher(directory);
+    IndexSearcher searcher = new IndexSearcher(DirectoryReader.open(directory));
     TopDocs topDocs = searcher.search(query, 10);
 
     for (ScoreDoc match : topDocs.scoreDocs) {
@@ -59,7 +59,7 @@ public class Explainer {
       System.out.println(doc.get("title"));
       System.out.println(explanation.toString());  //#B
     }
-    searcher.close();
+    
     directory.close();
   }
 }

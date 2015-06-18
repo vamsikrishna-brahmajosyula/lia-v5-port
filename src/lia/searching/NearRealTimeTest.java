@@ -28,14 +28,14 @@ import junit.framework.TestCase;
 public class NearRealTimeTest extends TestCase {
   public void testNearRealTime() throws Exception {
     Directory dir = new RAMDirectory();
-    IndexWriter writer = new IndexWriter(dir, new StandardAnalyzer(Version.LUCENE_30), IndexWriter.MaxFieldLength.UNLIMITED);
+    IndexWriter writer = new IndexWriter(dir, new IndexWriterConfig(new StandardAnalyzer()));
     for(int i=0;i<10;i++) {
       Document doc = new Document();
-      doc.add(new Field("id", ""+i, Field.Store.NO, Field.Index.NOT_ANALYZED_NO_NORMS));
-      doc.add(new Field("text", "aaa", Field.Store.NO, Field.Index.ANALYZED));
+      doc.add(new StringField("id", ""+i, Field.Store.NO));
+      doc.add(new TextField("text", "aaa", Field.Store.NO));
       writer.addDocument(doc);
     }
-    IndexReader reader = writer.getReader();                 // #1
+    IndexReader reader = DirectoryReader.open(dir);             // #1
     IndexSearcher searcher = new IndexSearcher(reader);      // #A
 
     Query query = new TermQuery(new Term("text", "aaa"));
@@ -45,19 +45,16 @@ public class NearRealTimeTest extends TestCase {
     writer.deleteDocuments(new Term("id", "7"));             // #2
 
     Document doc = new Document();                           // #3
-    doc.add(new Field("id",                                  // #3
+    doc.add(new StringField("id",                                  // #3
                       "11",                                  // #3
-                      Field.Store.NO,                        // #3
-                      Field.Index.NOT_ANALYZED_NO_NORMS));   // #3
-    doc.add(new Field("text",                                // #3
+                      Field.Store.NO));   // #3
+    doc.add(new TextField("text",                                // #3
                       "bbb",                                 // #3
-                      Field.Store.NO,                        // #3
-                      Field.Index.ANALYZED));                // #3
+                      Field.Store.NO));                // #3
     writer.addDocument(doc);                                 // #3
     
-    IndexReader newReader = reader.reopen();                 // #4
-    assertFalse(reader == newReader);                        // #5
-    reader.close();                                          // #6
+    IndexReader newReader = reader;
+                                         // #6
     searcher = new IndexSearcher(newReader);              
 
     TopDocs hits = searcher.search(query, 10);               // #7

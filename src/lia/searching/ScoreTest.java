@@ -17,23 +17,32 @@ package lia.searching;
 
 import junit.framework.TestCase;
 
-import org.apache.lucene.analysis.WhitespaceAnalyzer;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.FieldInvertState;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.search.CollectionStatistics;
 import org.apache.lucene.search.Explanation;
 import org.apache.lucene.search.FuzzyQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.Searcher;
-import org.apache.lucene.search.Similarity;
+import org.apache.lucene.search.similarities.Similarity;
+import org.apache.lucene.search.similarities.TFIDFSimilarity;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TermStatistics;
 import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 
+import java.io.IOException;
 import java.util.Vector;
 
 // From chapter 3
@@ -49,8 +58,8 @@ public class ScoreTest extends TestCase {
   }
 
   public void testSimple() throws Exception {
-    indexSingleFieldDocs(new Field[] {new Field("contents", "x", Field.Store.YES, Field.Index.ANALYZED)});
-    IndexSearcher searcher = new IndexSearcher(directory);
+    indexSingleFieldDocs(new Field[] {new StringField("contents", "x", Field.Store.YES)});
+    IndexSearcher searcher = new IndexSearcher(DirectoryReader.open(directory));
     searcher.setSimilarity(new SimpleSimilarity());
 
     Query query = new TermQuery(new Term("contents", "x"));
@@ -62,29 +71,29 @@ public class ScoreTest extends TestCase {
 
     assertEquals(1F, matches.scoreDocs[0].score, 0.0);
 
-    searcher.close();
+    
   }
 
   private void indexSingleFieldDocs(Field[] fields) throws Exception {
     IndexWriter writer = new IndexWriter(directory,
-        new WhitespaceAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED);
+        new IndexWriterConfig(new WhitespaceAnalyzer()));
     for (Field f : fields) {
       Document doc = new Document();
       doc.add(f);
       writer.addDocument(doc);
     }
-    writer.optimize();
+    
     writer.close();
   }
 
   public void testWildcard() throws Exception {
     indexSingleFieldDocs(new Field[]
-      { new Field("contents", "wild", Field.Store.YES, Field.Index.ANALYZED),
-        new Field("contents", "child", Field.Store.YES, Field.Index.ANALYZED),
-        new Field("contents", "mild", Field.Store.YES, Field.Index.ANALYZED),
-        new Field("contents", "mildew", Field.Store.YES, Field.Index.ANALYZED) });
+      { new StringField("contents", "wild", Field.Store.YES),
+        new StringField("contents", "child", Field.Store.YES),
+        new StringField("contents", "mild", Field.Store.YES),
+        new StringField("contents", "mildew", Field.Store.YES) });
 
-    IndexSearcher searcher = new IndexSearcher(directory);
+    IndexSearcher searcher = new IndexSearcher(DirectoryReader.open(directory));
     Query query = new WildcardQuery(new Term("contents", "?ild*"));  //#A
     TopDocs matches = searcher.search(query, 10);
     assertEquals("child no match", 3, matches.totalHits);
@@ -93,24 +102,22 @@ public class ScoreTest extends TestCase {
                                    matches.scoreDocs[1].score, 0.0);
     assertEquals("score the same", matches.scoreDocs[1].score,
                                    matches.scoreDocs[2].score, 0.0);
-    searcher.close();
+    
   }
   /*
     #A Construct WildcardQuery using Term
   */
 
   public void testFuzzy() throws Exception {
-    indexSingleFieldDocs(new Field[] { new Field("contents",
+    indexSingleFieldDocs(new Field[] { new TextField("contents",
                                                  "fuzzy",
-                                                 Field.Store.YES,
-                                                 Field.Index.ANALYZED),
-                                       new Field("contents",
+                                                 Field.Store.YES),
+                                       new TextField("contents",
                                                  "wuzzy",
-                                                 Field.Store.YES,
-                                                 Field.Index.ANALYZED)
+                                                 Field.Store.YES)
                                      });
 
-    IndexSearcher searcher = new IndexSearcher(directory);
+    IndexSearcher searcher = new IndexSearcher(DirectoryReader.open(directory));
     Query query = new FuzzyQuery(new Term("contents", "wuzza"));
     TopDocs matches = searcher.search(query, 10);
     assertEquals("both close enough", 2, matches.totalHits);
@@ -120,7 +127,7 @@ public class ScoreTest extends TestCase {
 
     Document doc = searcher.doc(matches.scoreDocs[0].doc);
     assertEquals("wuzza bear", "wuzzy", doc.get("contents"));
-    searcher.close();
+    
   }
 
   public static class SimpleSimilarity extends Similarity {
@@ -140,9 +147,9 @@ public class ScoreTest extends TestCase {
       return 2.0f;
     }
 
-    public float idf(Vector terms, Searcher searcher) {
-      return 1.0f;
-    }
+//    public float idf(Vector terms, Searcher searcher) {
+//      return 1.0f;
+//    }
 
     public float idf(int docFreq, int numDocs) {
       return 1.0f;
@@ -151,6 +158,24 @@ public class ScoreTest extends TestCase {
     public float coord(int overlap, int maxOverlap) {
       return 1.0f;
     }
+
+	@Override
+	public long computeNorm(FieldInvertState arg0) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public SimWeight computeWeight(float arg0, CollectionStatistics arg1, TermStatistics... arg2) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public SimScorer simScorer(SimWeight arg0, LeafReaderContext arg1) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
+	}
   }
 
 }

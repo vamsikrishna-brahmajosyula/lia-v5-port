@@ -19,6 +19,7 @@ import junit.framework.TestCase;
 
 import lia.common.TestUtil;
 
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.IndexSearcher;
@@ -30,7 +31,7 @@ import org.apache.lucene.store.Directory;
 public class PrefixQueryTest extends TestCase {
   public void testPrefix() throws Exception {
     Directory dir = TestUtil.getBookIndexDirectory();
-    IndexSearcher searcher = new IndexSearcher(dir);
+    IndexSearcher searcher = new IndexSearcher(DirectoryReader.open(dir));
 
     Term term = new Term("category",                              //#A
                          "/technology/computers/programming");    //#A
@@ -43,7 +44,7 @@ public class PrefixQueryTest extends TestCase {
     int justProgramming = matches.totalHits;
 
     assertTrue(programmingAndBelow > justProgramming);
-    searcher.close();
+    
     dir.close();
   }
 }
