@@ -28,18 +28,21 @@ import java.io.Reader;
 // From chapter 4
 public class SynonymAnalyzer extends Analyzer {
   private SynonymEngine engine;
-
+  private Reader reader;
   public SynonymAnalyzer(SynonymEngine engine) {
     this.engine = engine;
   }
-
+  protected Reader initReader(String fieldName, Reader reader) {
+	  this.reader = reader;
+	  
+  }
   public TokenStream tokenStream(String fieldName, Reader reader) {
     TokenStream result = new SynonymFilter(
                           new StopFilter(true,
                             new LowerCaseFilter(
                               new StandardFilter(
                                 new StandardTokenizer(
-                                 Version.LUCENE_30, reader))),
+                                  reader))),
                             StopAnalyzer.ENGLISH_STOP_WORDS_SET),
                           engine
                          );

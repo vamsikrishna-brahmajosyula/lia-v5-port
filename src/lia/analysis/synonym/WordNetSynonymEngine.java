@@ -16,6 +16,7 @@ package lia.analysis.synonym;
 */
 
 import org.apache.lucene.document.Document;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.TermQuery;
@@ -37,12 +38,12 @@ public class WordNetSynonymEngine implements SynonymEngine {
   Directory fsDir;
 
   public WordNetSynonymEngine(File index) throws IOException {
-    fsDir = FSDirectory.open(index);
-    searcher = new IndexSearcher(fsDir);
+    fsDir = FSDirectory.open(index.toPath());
+    searcher = new IndexSearcher(DirectoryReader.open(fsDir));
   }
 
   public void close() throws IOException {
-    searcher.close();
+    
     fsDir.close();
   }
 

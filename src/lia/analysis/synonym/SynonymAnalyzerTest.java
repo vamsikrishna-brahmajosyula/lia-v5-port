@@ -24,17 +24,20 @@ import lia.common.TestUtil;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.store.RAMDirectory;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.PhraseQuery;
-import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.util.Version;
-import org.apache.lucene.analysis.tokenattributes.TermAttribute;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 
 // From chapter 4
@@ -47,29 +50,28 @@ public class SynonymAnalyzerTest extends TestCase {
     RAMDirectory directory = new RAMDirectory();
 
     IndexWriter writer = new IndexWriter(directory,
-                                         synonymAnalyzer,  //#1  
-                                         IndexWriter.MaxFieldLength.UNLIMITED);
+                                         new IndexWriterConfig(synonymAnalyzer) //#1  
+                                         );
     Document doc = new Document();
-    doc.add(new Field("content",
+    doc.add(new TextField("content",
                       "The quick brown fox jumps over the lazy dog",
-                      Field.Store.YES,
-                      Field.Index.ANALYZED));  //#2
+                      Field.Store.YES));  //#2
     writer.addDocument(doc);
                                   
     writer.close();
 
-    searcher = new IndexSearcher(directory, true);
+    searcher = new IndexSearcher(DirectoryReader.open(directory));
   }
 
   public void tearDown() throws Exception {
-    searcher.close();
+   
   }
 
   public void testJumps() throws Exception {
     TokenStream stream =
       synonymAnalyzer.tokenStream("contents",                   // #A
                                   new StringReader("jumps"));   // #A
-    TermAttribute term = stream.addAttribute(TermAttribute.class);
+    CharTermAttribute term = stream.addAttribute(CharTermAttribute.class);
     PositionIncrementAttribute posIncr = stream.addAttribute(PositionIncrementAttribute.class);
 
     int i = 0;
@@ -77,7 +79,7 @@ public class SynonymAnalyzerTest extends TestCase {
                                      "hops",               // #B
                                      "leaps"};             // #B
     while(stream.incrementToken()) {
-      assertEquals(expected[i], term.term());
+      assertEquals(expected[i], term.toString());
 
       int expectedPos;      // #C
       if (i == 0) {         // #C
@@ -115,16 +117,16 @@ public class SynonymAnalyzerTest extends TestCase {
   */
 
   public void testWithQueryParser() throws Exception {
-    Query query = new QueryParser(Version.LUCENE_30,                   // 1
+    Query query = new QueryParser(                   // 1
                                   "content",                                // 1
                                   synonymAnalyzer).parse("\"fox jumps\"");  // 1
     assertEquals(1, TestUtil.hitCount(searcher, query));                   // 1
     System.out.println("With SynonymAnalyzer, \"fox jumps\" parses to " +
                                          query.toString("content"));
 
-    query = new QueryParser(Version.LUCENE_30,                         // 2
+    query = new QueryParser(                         // 2
                             "content",                                      // 2
-                            new StandardAnalyzer(Version.LUCENE_30)).parse("\"fox jumps\""); // B
+                            new StandardAnalyzer()).parse("\"fox jumps\""); // B
     assertEquals(1, TestUtil.hitCount(searcher, query));                   // 2
     System.out.println("With StandardAnalyzer, \"fox jumps\" parses to " +
                                          query.toString("content"));

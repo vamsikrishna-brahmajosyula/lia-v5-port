@@ -17,7 +17,7 @@ package lia.analysis.synonym;
 
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.TokenFilter;
-import org.apache.lucene.analysis.tokenattributes.TermAttribute;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.util.AttributeSource;
 import java.io.IOException;
@@ -32,7 +32,7 @@ public class SynonymFilter extends TokenFilter {
   private SynonymEngine engine;
   private AttributeSource.State current;
 
-  private final TermAttribute termAtt;
+  private final CharTermAttribute termAtt;
   private final PositionIncrementAttribute posIncrAtt;
 
   public SynonymFilter(TokenStream in, SynonymEngine engine) {
@@ -40,7 +40,7 @@ public class SynonymFilter extends TokenFilter {
     synonymStack = new Stack<String>();                     //#1 
     this.engine = engine;
 
-    this.termAtt = addAttribute(TermAttribute.class);
+    this.termAtt = addAttribute(CharTermAttribute.class);
     this.posIncrAtt = addAttribute(PositionIncrementAttribute.class);
   }
 
@@ -48,7 +48,8 @@ public class SynonymFilter extends TokenFilter {
     if (synonymStack.size() > 0) {                          //#2
       String syn = synonymStack.pop();                      //#2
       restoreState(current);                                //#2
-      termAtt.setTermBuffer(syn);
+     
+      termAtt.copyBuffer( syn.toCharArray(), 0,syn.length());
       posIncrAtt.setPositionIncrement(0);                   //#3
       return true;
     }
@@ -64,7 +65,7 @@ public class SynonymFilter extends TokenFilter {
   }
 
   private boolean addAliasesToStack() throws IOException {
-    String[] synonyms = engine.getSynonyms(termAtt.term()); //#8
+    String[] synonyms = engine.getSynonyms(termAtt.toString()); //#8
     if (synonyms == null) {
       return false;
     }
