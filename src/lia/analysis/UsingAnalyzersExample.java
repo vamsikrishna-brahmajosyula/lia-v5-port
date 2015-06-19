@@ -17,13 +17,15 @@ package lia.analysis;
 
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.queryParser.QueryParser;
-import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.util.Version;
 
 import java.io.IOException;
@@ -37,24 +39,21 @@ public class UsingAnalyzersExample {
     public void someMethod() throws IOException, ParseException {
         RAMDirectory directory = new RAMDirectory();
 
-        Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_30);
-        IndexWriter writer = new IndexWriter(directory, analyzer, IndexWriter.MaxFieldLength.UNLIMITED);
+        Analyzer analyzer = new StandardAnalyzer();
+        IndexWriter writer = new IndexWriter(directory, new IndexWriterConfig( analyzer));
 
         Document doc = new Document();
-        doc.add(new Field("title", "This is the title", Field.Store.YES, Field.Index.ANALYZED));
-        doc.add(new Field("contents", "...document contents...", Field.Store.NO, Field.Index.ANALYZED));
+        doc.add(new TextField("title", "This is the title", Field.Store.YES));
+        doc.add(new TextField("contents", "...document contents...", Field.Store.NO));
         writer.addDocument(doc);
 
-        writer.addDocument(doc, analyzer);
-
+  
         String expression = "some query";
 
-        Query query = new QueryParser(Version.LUCENE_30,
-                                      "contents", analyzer)
+        Query query = new QueryParser("contents", analyzer)
                 .parse(expression);
 
-        QueryParser parser = new QueryParser(Version.LUCENE_30,
-                                             "contents", analyzer);
+        QueryParser parser = new QueryParser("contents", analyzer);
         query = parser.parse(expression);
     }
 }

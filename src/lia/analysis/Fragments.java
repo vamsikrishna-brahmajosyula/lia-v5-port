@@ -29,9 +29,8 @@ public class Fragments {
   public void frag1() throws Exception {
     Directory directory = null;
     // START
-    Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_30);
-    IndexWriter writer = new IndexWriter(directory, analyzer, 
-                            IndexWriter.MaxFieldLength.UNLIMITED);
+    Analyzer analyzer = new StandardAnalyzer();
+    IndexWriter writer = new IndexWriter(directory, new IndexWriterConfig( analyzer));
     // END
   }
 
@@ -39,10 +38,9 @@ public class Fragments {
     IndexWriter writer = null;
     // START
     Document doc = new Document();
-    doc.add(new Field("title", "This is the title", Field.Store.YES, 
-                      Field.Index.ANALYZED));
-    doc.add(new Field("contents", "...document contents...", Field.Store.NO, 
-                      Field.Index.ANALYZED));
+    doc.add(new TextField("title", "This is the title", Field.Store.YES
+                      ));
+    doc.add(new TextField("contents", "...document contents...", Field.Store.NO));
     writer.addDocument(doc);
     // END
   }

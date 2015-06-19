@@ -16,9 +16,9 @@ package lia.analysis;
 */
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.StopAnalyzer;
-import org.apache.lucene.analysis.SimpleAnalyzer;
-import org.apache.lucene.analysis.WhitespaceAnalyzer;
+import org.apache.lucene.analysis.core.StopAnalyzer;
+import org.apache.lucene.analysis.core.SimpleAnalyzer;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.util.Version;
 import java.io.IOException;
@@ -38,8 +38,8 @@ public class AnalyzerDemo {
   private static final Analyzer[] analyzers = new Analyzer[] { 
     new WhitespaceAnalyzer(),
     new SimpleAnalyzer(),
-    new StopAnalyzer(Version.LUCENE_30),
-    new StandardAnalyzer(Version.LUCENE_30)
+    new StopAnalyzer(),
+    new StandardAnalyzer()
   };
 
   public static void main(String[] args) throws IOException {

@@ -18,9 +18,9 @@ package lia.analysis;
 import junit.framework.Assert;
 import org.apache.lucene.util.AttributeSource;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.SimpleAnalyzer;
+import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.tokenattributes.TermAttribute;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
@@ -40,9 +40,9 @@ public class AnalyzerUtils {
   public static void displayTokens(TokenStream stream)
     throws IOException {
 
-    TermAttribute term = stream.addAttribute(TermAttribute.class);
+    CharTermAttribute term = stream.addAttribute(CharTermAttribute.class);
     while(stream.incrementToken()) {
-      System.out.print("[" + term.term() + "] ");    //B
+      System.out.print("[" + term.toString() + "] ");    //B
     }
   }
   /*
@@ -56,8 +56,8 @@ public class AnalyzerUtils {
   }
 
   public static String getTerm(AttributeSource source) {
-    TermAttribute attr = source.addAttribute(TermAttribute.class);
-    return attr.term();
+    CharTermAttribute attr = source.addAttribute(CharTermAttribute.class);
+    return attr.toString();
   }
 
   public static String getType(AttributeSource source) {
@@ -71,8 +71,10 @@ public class AnalyzerUtils {
   }
 
   public static void setTerm(AttributeSource source, String term) {
-    TermAttribute attr = source.addAttribute(TermAttribute.class);
-    attr.setTermBuffer(term);
+    CharTermAttribute attr = source.addAttribute(CharTermAttribute.class);
+    
+    attr.resizeBuffer(term.length());
+    attr.copyBuffer(term.toCharArray(), 0, term.length());
   }
 
   public static void setType(AttributeSource source, String type) {
@@ -85,7 +87,7 @@ public class AnalyzerUtils {
 
     TokenStream stream = analyzer.tokenStream("contents",
                                               new StringReader(text));
-    TermAttribute term = stream.addAttribute(TermAttribute.class);
+    CharTermAttribute term = stream.addAttribute(CharTermAttribute.class);
     PositionIncrementAttribute posIncr = stream.addAttribute(PositionIncrementAttribute.class);
 
     int position = 0;
@@ -97,7 +99,7 @@ public class AnalyzerUtils {
         System.out.print(position + ": ");
       }
 
-      System.out.print("[" + term.term() + "] ");
+      System.out.print("[" + term.toString() + "] ");
     }
     System.out.println();
   }
@@ -108,7 +110,7 @@ public class AnalyzerUtils {
     TokenStream stream = analyzer.tokenStream("contents",                        // #A
                                               new StringReader(text));
 
-    TermAttribute term = stream.addAttribute(TermAttribute.class);        // #B
+    CharTermAttribute term = stream.addAttribute(CharTermAttribute.class);        // #B
     PositionIncrementAttribute posIncr =                                  // #B 
     	stream.addAttribute(PositionIncrementAttribute.class);              // #B
     OffsetAttribute offset = stream.addAttribute(OffsetAttribute.class);  // #B
@@ -125,7 +127,7 @@ public class AnalyzerUtils {
       }
 
       System.out.print("[" +                                 // #E
-                       term.term() + ":" +                   // #E
+                       term.toString() + ":" +                   // #E
                        offset.startOffset() + "->" +         // #E
                        offset.endOffset() + ":" +            // #E
                        type.type() + "] ");                  // #E
@@ -144,10 +146,10 @@ public class AnalyzerUtils {
                                       String[] output) throws Exception {
     TokenStream stream = analyzer.tokenStream("field", new StringReader(input));
 
-    TermAttribute termAttr = stream.addAttribute(TermAttribute.class);
+    CharTermAttribute termAttr = stream.addAttribute(CharTermAttribute.class);
     for (String expected : output) {
       Assert.assertTrue(stream.incrementToken());
-      Assert.assertEquals(expected, termAttr.term());
+      Assert.assertEquals(expected, termAttr.toString());
     }
     Assert.assertFalse(stream.incrementToken());
     stream.close();
@@ -169,7 +171,7 @@ public class AnalyzerUtils {
 
     System.out.println("\n----");
     System.out.println("StandardAnalyzer");
-    displayTokensWithFullDetails(new StandardAnalyzer(Version.LUCENE_30),
+    displayTokensWithFullDetails(new StandardAnalyzer(),
         "I'll email you at xyz@example.com");
   }
 }
